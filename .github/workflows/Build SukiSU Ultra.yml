@@ -9,6 +9,8 @@ on:
         type: choice
         options:
           - 'sm8650'
+          - 'mt6989'
+          - 'sm8635'
           - 'sm8550'
           - 'sm8450'
           - 'sm8475'
@@ -28,6 +30,8 @@ on:
           - 'oneplus_13r'
           - 'oneplus_pad2'
           - 'oneplus_pad_pro'
+          - 'oneplus_ace5_race'
+          - 'oneplus_nord_5'
           - 'oneplus_11'
           - 'oneplus_12r'
           - 'oneplus_ace2_pro'
@@ -57,7 +61,7 @@ on:
         default: 'pineapple'
         
       ANDROID_VERSION:
-        description: "内核安卓版本"
+        description: "KMI安卓版本"
         required: true
         type: choice
         options:
@@ -125,6 +129,7 @@ jobs:
     steps:
       # ====================== 系统初始化阶段 ======================
       - name: "🚀 Maximize Build Space | 最大化构建空间"
+        if: ${{ github.event.inputs.KERNEL_VERSION != '6.1' }}
         uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 8192
@@ -235,11 +240,19 @@ jobs:
           echo "🔄 同步代码库(使用$(nproc --all)线程)..."
           repo sync -c -j$(nproc --all) --no-tags --no-clone-bundle --force-sync
           
-          echo "⬇️ 下载内核设置工具..."
-          curl -L -o kernel_setup.bin https://github.com/Xiaomichael/OnePlus-Actions/raw/Build/script/kernel_setup.bin
-          chmod +x kernel_setup.bin
-          ./kernel_setup.bin
-         
+          echo "Kernel version:-${{ github.event.inputs.ANDROID_VERSION }}-oki-xiaoxiaow"
+          rm kernel_platform/common/android/abi_gki_protected_exports_* || echo "No protected exports!"
+          rm kernel_platform/msm-kernel/android/abi_gki_protected_exports_* || echo "No protected exports!"
+          sed -i 's/ -dirty//g' kernel_platform/common/scripts/setlocalversion
+          sed -i 's/ -dirty//g' kernel_platform/msm-kernel/scripts/setlocalversion
+          sed -i 's/ -dirty//g' kernel_platform/external/dtc/scripts/setlocalversion
+          sed -i '$i res=$(echo "$res" | sed '\''s/-dirty//g'\'')' kernel_platform/common/scripts/setlocalversion
+          sed -i '$i res=$(echo "$res" | sed '\''s/-dirty//g'\'')' kernel_platform/msm-kernel/scripts/setlocalversion
+          sed -i '$i res=$(echo "$res" | sed '\''s/-dirty//g'\'')' kernel_platform/external/dtc/scripts/setlocalversion
+          sed -i '$s|echo "\$res"|echo "-${{ github.event.inputs.ANDROID_VERSION }}-oki-xiaoxiaow"|' kernel_platform/common/scripts/setlocalversion            
+          sed -i '$s|echo "\$res"|echo "-${{ github.event.inputs.ANDROID_VERSION }}-oki-xiaoxiaow"|' kernel_platform/msm-kernel/scripts/setlocalversion
+          sed -i '$s|echo "\$res"|echo "-${{ github.event.inputs.ANDROID_VERSION }}-oki-xiaoxiaow"|' kernel_platform/external/dtc/scripts/setlocalversion
+
           echo "✅ 内核配置完成"
          
       # ====================== 内核定制阶段 ======================
@@ -419,7 +432,7 @@ jobs:
         run: |
           echo "🏗️ 开始内核编译..."
           if [ "${{ github.event.inputs.KERNEL_VERSION }}" == "6.1" ]; then
-            export KBUILD_BUILD_TIMESTAMP="Thu May 29 07:25:40 UTC 2025"
+            export KBUILD_BUILD_TIMESTAMP="Mon Jul 7 01:51:02 UTC 2025"
             export KBUILD_BUILD_VERSION=1
             export PATH="$GITHUB_WORKSPACE/kernel_workspace/kernel_platform/prebuilts/clang/host/linux-x86/clang-r487747c/bin:$PATH"
             export PATH="/usr/lib/ccache:$PATH"
@@ -562,5 +575,5 @@ jobs:
           BBR: ${{ github.event.inputs.bbr }}
           KSU_VAR: "SukiSU"
           
-      #- name: 📊 Post-build disk check (构建后空间检查)
-      #  run: df -h
+      - name: 📊 Post-build disk check (构建后空间检查)
+        run: df -h
