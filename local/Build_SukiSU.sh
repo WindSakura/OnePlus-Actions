@@ -21,15 +21,15 @@ ask() {
 }
 
 # --- Interactive Inputs ---
-CPU=$(ask "Enter CPU branch (e.g., sm8650, sm8550)" "sm8650")
+CPU=$(ask "Enter CPU branch (e.g., sm8650, sm8550, sm8475)" "sm8650")
 FEIL=$(ask "Enter phone model (e.g., oneplus_12, oneplus_11)" "oneplus_12")
 CPUD=$(ask "Enter processor codename (e.g., pineapple, kalama, waipio)" "pineapple")
 ANDROID_VERSION=$(ask "Enter kernel Android version (android14, android13, android12)" "android14")
 KERNEL_VERSION=$(ask "Enter kernel version (6.1, 5.15, 5.10)" "6.1")
 KPM=$(ask "Enable KPM (Kernel Patch Manager)? (On/Off)" "Off")
-lz4kd=$(ask "Enable lz4kd? (6.1 uses lz4+zstd if Off) (On/Off)" "Off")
+lz4kd=$(ask "Enable lz4kd? (6.1 uses lz4 + zstd if Off) (On/Off)" "Off")
 bbr=$(ask "Enable BBR congestion control algorithm? (On/Off)" "Off")
-proxy=$(ask "Add proxy performance optimization? (On/Off)" "On")
+proxy=$(ask "Add proxy performance optimization? (if oneplus_ace5_race must be off!!!!) (On/Off)" "On")
 
 # --- Display Configuration Summary ---
 clear
@@ -385,11 +385,11 @@ fi
 # --- Finalize and Upload ---
 
 if [ "$lz4kd" = "On" ]; then
-  ARTIFACT_NAME="AnyKernel3_SukiSU_Ultra_lz4kd_${KSUVER}_${FEIL}"
+  ARTIFACT_NAME="${FEIL}_SukiSU_Ultra_lz4kd_${KSUVER}"
 elif [ "$KERNEL_VERSION" = "6.1" ]; then
-  ARTIFACT_NAME="AnyKernel3_SukiSU_Ultra_lz4_zstd_${KSUVER}_${FEIL}"
+  ARTIFACT_NAME="${FEIL}_SukiSU_Ultra_lz4_zstd_${KSUVER}"
 else
-  ARTIFACT_NAME="AnyKernel3_SukiSU_Ultra_${KSUVER}_${FEIL}"
+  ARTIFACT_NAME="${FEIL}_SukiSU_Ultra_${KSUVER}"
 fi
 FINAL_ZIP_NAME="${ARTIFACT_NAME}.zip"
 
@@ -403,14 +403,14 @@ echo "               Build Complete!"
 echo "================================================="
 echo "-> Flashable Zip: $WORKSPACE/${FINAL_ZIP_NAME}"
 
-if [ "$lz4kd" = "On" ]; then
-    ZRAM_KO_PATH=$(find "$WORKSPACE/kernel_workspace/kernel_platform/common/out/" -name "zram.ko" | head -n 1)
-    if [ -n "$ZRAM_KO_PATH" ]; then
-        cp "$ZRAM_KO_PATH" "$WORKSPACE/"
-        echo "-> zram.ko module: $WORKSPACE/zram.ko"
-    fi
+ZRAM_KO_PATH=$(find "$WORKSPACE/kernel_workspace/kernel_platform/common/out/" -name "zram.ko" | head -n 1)
+if [ -n "$ZRAM_KO_PATH" ]; then
+    cp "$ZRAM_KO_PATH" "$WORKSPACE/"
+    echo "-> zram.ko module: $WORKSPACE/zram.ko"
 fi
+
 echo "================================================="
 echo ""
 
+echo "📊 Displaying disk statistics:"
 df -h
